@@ -10,6 +10,7 @@ import { GroupNode } from './group';
 import { ImageNode } from './image';
 import { CodeArtifactNode } from './code-artifact';
 import { WebsiteNode } from './website';
+import { GhostNode } from './ghost';
 import {
   NodeMetadataMap,
   CanvasNodeData,
@@ -48,6 +49,7 @@ export const nodeTypes: NodeTypes = {
   image: ImageNode,
   codeArtifact: CodeArtifactNode,
   website: WebsiteNode,
+  ghost: GhostNode,
 };
 
 // Helper function to prepare node data

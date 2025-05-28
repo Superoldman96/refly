@@ -62,7 +62,11 @@ import HelperLines from './common/helper-line/index';
 import { useListenNodeOperationEvents } from '@refly-packages/ai-workspace-common/hooks/canvas/use-listen-node-events';
 import { runtime } from '@refly-packages/ai-workspace-common/utils/env';
 import getClient from '@refly-packages/ai-workspace-common/requests/proxiedRequest';
-import { nodeOperationsEmitter } from '@refly-packages/ai-workspace-common/events/nodeOperations';
+import {
+  NodeContextMenuSource,
+  NodeDragCreateInfo,
+  nodeOperationsEmitter,
+} from '@refly-packages/ai-workspace-common/events/nodeOperations';
 import { useCanvasInitialActions } from '@refly-packages/ai-workspace-common/hooks/use-canvas-initial-actions';
 
 const GRID_SIZE = 10;
@@ -86,6 +90,8 @@ interface ContextMenuState {
   nodeId?: string;
   nodeType?: CanvasNodeType;
   isSelection?: boolean;
+  source?: 'node' | 'handle';
+  dragCreateInfo?: NodeDragCreateInfo;
 }
 
 // Add new memoized components
@@ -211,6 +217,7 @@ const Flow = memo(({ canvasId }: { canvasId: string }) => {
     setCanvasPage,
     showSlideshow,
     setShowSlideshow,
+    setContextMenuOpenedCanvasId,
   } = useCanvasStoreShallow((state) => ({
     config: state.config[canvasId],
     operatingNodeId: state.operatingNodeId,
@@ -220,6 +227,7 @@ const Flow = memo(({ canvasId }: { canvasId: string }) => {
     setCanvasPage: state.setCanvasPage,
     showSlideshow: state.showSlideshow,
     setShowSlideshow: state.setShowSlideshow,
+    setContextMenuOpenedCanvasId: state.setContextMenuOpenedCanvasId,
   }));
   const hasCanvasSynced = config?.localSyncedAt > 0 && config?.remoteSyncedAt > 0;
 
@@ -497,6 +505,12 @@ const Flow = memo(({ canvasId }: { canvasId: string }) => {
     type: 'canvas',
   });
 
+  useEffect(() => {
+    if (contextMenu.type === 'node') {
+      setContextMenuOpenedCanvasId(contextMenu.open ? contextMenu.nodeId : null);
+    }
+  }, [contextMenu, setContextMenuOpenedCanvasId]);
+
   const onPaneContextMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
@@ -515,7 +529,14 @@ const Flow = memo(({ canvasId }: { canvasId: string }) => {
   );
 
   const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: CanvasNode<any>) => {
+    (
+      event: React.MouseEvent,
+      node: CanvasNode<any>,
+      metaInfo?: {
+        source?: NodeContextMenuSource;
+        dragCreateInfo?: NodeDragCreateInfo;
+      },
+    ) => {
       event.preventDefault();
       const flowPosition = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
@@ -556,10 +577,14 @@ const Flow = memo(({ canvasId }: { canvasId: string }) => {
           return; // Don't show context menu for unknown node types
       }
 
+      const { source, dragCreateInfo } = metaInfo || {};
+
       setContextMenu({
         open: true,
         position: flowPosition,
         type: 'node',
+        source: source || 'node',
+        dragCreateInfo,
         nodeId: node.id,
         nodeType: menuNodeType,
       });
@@ -569,6 +594,11 @@ const Flow = memo(({ canvasId }: { canvasId: string }) => {
 
   const handleNodeClick = useCallback(
     (event: React.MouseEvent, node: CanvasNode<any>) => {
+      if (node.id.startsWith('ghost-')) {
+        setContextMenu((prev) => ({ ...prev, open: false }));
+        return;
+      }
+
       const { operatingNodeId } = useCanvasStore.getState();
       setContextMenu((prev) => ({ ...prev, open: false }));
 
@@ -853,7 +883,10 @@ const Flow = memo(({ canvasId }: { canvasId: string }) => {
         } as unknown as CanvasNode<any>;
 
         // 调用onNodeContextMenu处理上下文菜单
-        onNodeContextMenu(syntheticEvent, node);
+        onNodeContextMenu(syntheticEvent, node, {
+          source: event.source,
+          dragCreateInfo: event.dragCreateInfo,
+        });
       }
     };
 
@@ -1004,6 +1037,8 @@ const Flow = memo(({ canvasId }: { canvasId: string }) => {
               position={contextMenu.position}
               nodeId={contextMenu.nodeId}
               nodeType={contextMenu.nodeType}
+              source={contextMenu.source}
+              dragCreateInfo={contextMenu.dragCreateInfo}
               setOpen={(open) => setContextMenu((prev) => ({ ...prev, open }))}
             />
           )}

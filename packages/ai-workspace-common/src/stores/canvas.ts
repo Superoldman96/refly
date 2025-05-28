@@ -53,6 +53,7 @@ export interface CanvasState {
   linearThreadMessages: (LinearThreadMessage & CacheInfo)[];
   tplConfig: Record<string, any> | null;
   canvasPage: Record<string, string>;
+  contextMenuOpenedCanvasId: string | null;
 
   setInitialFitViewCompleted: (completed: boolean) => void;
   deleteCanvasData: (canvasId: string) => void;
@@ -82,6 +83,7 @@ export interface CanvasState {
   setTplConfig: (config: Record<string, any> | null) => void;
   clearState: () => void;
   setCanvasPage: (canvasId: string, pageId: string) => void;
+  setContextMenuOpenedCanvasId: (canvasId: string | null) => void;
 }
 
 const defaultCanvasConfig: () => CanvasConfig = () => ({
@@ -106,6 +108,7 @@ const defaultCanvasState = () => ({
   linearThreadMessages: [],
   tplConfig: null,
   canvasPage: {},
+  contextMenuOpenedCanvasId: null,
 });
 
 // Create our custom storage with appropriate configuration
@@ -306,6 +309,10 @@ export const useCanvasStore = create<CanvasState>()(
       setCanvasPage: (canvasId, pageId) =>
         set((state) => {
           state.canvasPage[canvasId] = pageId;
+        }),
+      setContextMenuOpenedCanvasId: (canvasId) =>
+        set((state) => {
+          state.contextMenuOpenedCanvasId = canvasId;
         }),
     })),
     {

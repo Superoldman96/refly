@@ -924,6 +924,7 @@ const translations = {
       codeArtifact: '代码组件',
       website: '网站',
       mindMap: '思维导图',
+      group: '分组',
     },
     presetScenarios: {
       title: '预设场景',
@@ -1172,6 +1173,7 @@ const translations = {
       downloadFile: '下载文件',
       editGroupNamePlaceholder: '请输入分组名称',
       addToSlideshow: '插入幻灯片',
+      more: '更多选项',
     },
     nodeStatus: {
       isCreatingDocument: '创建中...',
