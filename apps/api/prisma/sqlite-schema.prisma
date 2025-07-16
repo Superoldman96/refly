@@ -151,6 +151,7 @@ model ActionResult {
 
   @@unique([resultId, version])
   @@index([targetType, targetId])
+  @@index([status, updatedAt])
   @@map("action_results")
 }
 

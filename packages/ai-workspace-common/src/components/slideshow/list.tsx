@@ -7,7 +7,7 @@ import {
   useDeletePage,
 } from '@refly-packages/ai-workspace-common/queries/queries';
 import { Page } from '@refly-packages/ai-workspace-common/requests/types.gen';
-import { formatDate } from '@/utils/date';
+import { formatDate } from '@refly-packages/ai-workspace-common/utils/date';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
 

@@ -740,6 +740,9 @@ importers:
       '@refly/stores':
         specifier: workspace:*
         version: link:../../packages/stores
+      '@refly/web-core':
+        specifier: workspace:*
+        version: link:../../packages/web-core
       '@sentry/react':
         specifier: ^7.113.0
         version: 7.120.3(react@18.3.1)
