@@ -15,6 +15,9 @@ type WorkflowPollerRecord = {
 
 const workflowExecutionPollers = new Map<string, WorkflowPollerRecord>();
 
+// Track completed executions to prevent duplicate callback calls
+const completedExecutions = new Set<string>();
+
 interface UseWorkflowExecutionPollingOptions {
   executionId: string | null;
   canvasId?: string;
@@ -47,6 +50,18 @@ export const useWorkflowExecutionPolling = ({
   const [isPolling, setIsPolling] = useState(false);
   const [status, setStatus] = useState<WorkflowExecutionStatus | null>(null);
   const isPollingRef = useRef(false);
+
+  // Use refs to store callbacks to avoid creating new references on each render
+  const onStatusChangeRef = useRef(onStatusChange);
+  const onCompleteRef = useRef(onComplete);
+  const onErrorRef = useRef(onError);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onStatusChangeRef.current = onStatusChange;
+    onCompleteRef.current = onComplete;
+    onErrorRef.current = onError;
+  }, [onStatusChange, onComplete, onError]);
 
   // Read executionId from canvas store (persisted) and provide a way to clear it when done
   const { storeExecutionId, setCanvasExecutionId, setCanvasNodeExecutions } = useCanvasStoreShallow(
@@ -99,6 +114,9 @@ export const useWorkflowExecutionPolling = ({
     if (!currentExecutionId || isPollingRef.current) {
       return;
     }
+
+    // Clear the completed flag for this execution
+    completedExecutions.delete(currentExecutionId);
 
     setIsPolling(true);
     isPollingRef.current = true;
@@ -176,11 +194,19 @@ export const useWorkflowExecutionPolling = ({
 
     if (currentStatus !== status) {
       setStatus(currentStatus);
-      onStatusChange?.(currentStatus);
+      onStatusChangeRef.current?.(currentStatus);
     }
 
     // If finished or failed, stop polling and clear executionId and nodeExecutions from store
     if (currentStatus === 'finish' || currentStatus === 'failed') {
+      // Check if this execution has already been completed
+      const shouldTriggerCallback =
+        currentExecutionId && !completedExecutions.has(currentExecutionId);
+
+      if (shouldTriggerCallback && currentExecutionId) {
+        completedExecutions.add(currentExecutionId);
+      }
+
       // Force stop global poller for this executionId
       if (currentExecutionId) {
         const record = workflowExecutionPollers.get(currentExecutionId);
@@ -194,13 +220,15 @@ export const useWorkflowExecutionPolling = ({
         setCanvasExecutionId(canvasId, null);
         setCanvasNodeExecutions(canvasId, null);
       }
-      onComplete?.(currentStatus, data);
+
+      // Only trigger callback once per executionId
+      if (shouldTriggerCallback) {
+        onCompleteRef.current?.(currentStatus, data);
+      }
     }
   }, [
     currentStatus,
     status,
-    onStatusChange,
-    onComplete,
     data,
     canvasId,
     currentExecutionId,
@@ -211,10 +239,11 @@ export const useWorkflowExecutionPolling = ({
 
   // Handle errors
   useEffect(() => {
-    if (error) {
-      onError?.(error);
+    if (error && currentExecutionId && !completedExecutions.has(currentExecutionId)) {
+      completedExecutions.add(currentExecutionId);
+      onErrorRef.current?.(error);
     }
-  }, [error, onError]);
+  }, [error, currentExecutionId]);
 
   // Auto-start polling when executionId is available and enabled
   useEffect(() => {

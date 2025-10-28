@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { message, notification } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +24,32 @@ export const useInitializeWorkflow = (canvasId?: string) => {
 
   const { forceSyncState } = useCanvasContext();
 
+  // Memoize callbacks to avoid recreating them on every render
+  const handleComplete = useMemo(
+    () => (status: string, _data: any) => {
+      if (status === 'finish') {
+        notification.success({
+          message:
+            t('canvas.workflow.run.completed') || 'Workflow execution completed successfully',
+        });
+      } else if (status === 'failed') {
+        notification.error({
+          message: t('canvas.workflow.run.failed') || 'Workflow execution failed',
+        });
+      }
+    },
+    [t],
+  );
+
+  const handleError = useMemo(
+    () => (_error: any) => {
+      notification.error({
+        message: t('canvas.workflow.run.error') || 'Error monitoring workflow execution',
+      });
+    },
+    [t],
+  );
+
   // Use the polling hook for workflow execution monitoring
   const {
     status: workflowStatus,
@@ -37,24 +63,8 @@ export const useInitializeWorkflow = (canvasId?: string) => {
     canvasId: canvasId || '',
     enabled: !!executionId || !!canvasId,
     interval: 2000,
-
-    onComplete: (status, _data) => {
-      if (status === 'finish') {
-        notification.success({
-          message:
-            t('canvas.workflow.run.completed') || 'Workflow execution completed successfully',
-        });
-      } else if (status === 'failed') {
-        notification.error({
-          message: t('canvas.workflow.run.failed') || 'Workflow execution failed',
-        });
-      }
-    },
-    onError: (_error) => {
-      notification.error({
-        message: t('canvas.workflow.run.error') || 'Error monitoring workflow execution',
-      });
-    },
+    onComplete: handleComplete,
+    onError: handleError,
   });
 
   const initializeWorkflow = useCallback(

@@ -17,6 +17,9 @@ import { FalVideoToolset, FalVideoToolsetDefinition } from './fal-video';
 import { PerplexityToolset, PerplexityToolsetDefinition } from './perplexity';
 import { ProductHuntToolset, ProductHuntToolsetDefinition } from './producthunt';
 import { BrowserUseToolset, BrowserUseToolsetDefinition } from './browser-use';
+import { ScaleboxToolset, ScaleboxToolsetDefinition } from './scalebox';
+import { ApifyToolset, ApifyToolsetDefinition } from './apify';
+import { NovitaSandboxToolset, NovitaSandboxToolsetDefinition } from './novita-sandbox';
 
 export type AnyToolsetClass = new (...args: any[]) => AgentBaseToolset<any>;
 
@@ -94,5 +97,17 @@ export const toolsetInventory: Record<
   [BrowserUseToolsetDefinition.key]: {
     class: BrowserUseToolset,
     definition: BrowserUseToolsetDefinition,
+  },
+  [ScaleboxToolsetDefinition.key]: {
+    class: ScaleboxToolset,
+    definition: ScaleboxToolsetDefinition,
+  },
+  [ApifyToolsetDefinition.key]: {
+    class: ApifyToolset,
+    definition: ApifyToolsetDefinition,
+  },
+  [NovitaSandboxToolsetDefinition.key]: {
+    class: NovitaSandboxToolset,
+    definition: NovitaSandboxToolsetDefinition,
   },
 };
